@@ -10,11 +10,13 @@ interface LoginArgs {
     password: string;
 }
 import UserModel from '../models/UserModel'; // Assuming UserModel is in the same directory
+import { hashPassword, comparePassword } from "../auth";
+
 
 export default class UserController {
-    create(args: SignupArgs): Promise<string> {
-       
-
+    async create(args: SignupArgs): Promise<string> {
+        const hashedPassword = await hashPassword(args.password) as string;
+        args.password = hashedPassword
         return UserModel.create(args)
             .then(() => 'User created')
             .catch(err => {
@@ -22,13 +24,16 @@ export default class UserController {
                 return 'Error creating user';
             });
     }
-
-    login(args: LoginArgs): Promise<string> {
+    async login(args: LoginArgs): Promise<string> {
         return UserModel.get(args.email)
-            .then(user => {
+            .then(async (user) => {
                 if (user) {
-                    // Here you should check the user's password
-                    return 'User logged in';
+                    const valid = await comparePassword(args.password, user.password);
+                    if (valid) {
+                        return 'User logged in';
+                    } else {
+                        return 'Invalid password';
+                    }
                 } else {
                     return 'User not found';
                 }
