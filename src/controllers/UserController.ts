@@ -11,6 +11,7 @@ interface LoginArgs {
 }
 import UserModel from '../models/UserModel'; // Assuming UserModel is in the same directory
 import { hashPassword, comparePassword } from "../auth";
+import jwt, { Secret } from "jsonwebtoken";
 
 
 export default class UserController {
@@ -30,12 +31,23 @@ export default class UserController {
                 if (user) {
                     const valid = await comparePassword(args.password, user.password);
                     if (valid) {
-                        return 'User logged in';
+                        const token = jwt.sign(
+                            {
+                              role: user.role,
+                              userId: user.email,
+                            },
+                            process.env.JWT_SECRET as Secret,
+                            {
+                              expiresIn: "6h",
+                              algorithm: "HS256",
+                            }
+                          );
+                        return token;
                     } else {
                         return 'Invalid password';
                     }
                 } else {
-                    return 'User not found';
+                    throw 'User not found';
                 }
             })
             .catch(err => {
