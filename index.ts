@@ -1,13 +1,52 @@
 import express, { Request, Response } from 'express';
+import UserRouter from './src/routes/UserRoute';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
+import { Pool, PoolConfig } from 'pg';
+
+dotenv.config();
 
 const app = express();
 
-app.use(express.json());
+const dbConfig: PoolConfig = {
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: parseInt(process.env.DB_PORT || '5432'),
+    ssl: process.env.DB_SSL ? { ca: process.env.DB_SSL } : false,
+};
 
-app.get('/', (req: Request, res: Response) => {
-  res.send('Hello World!');
+const pgPool = new Pool(dbConfig);
+
+// Middleware
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Routes
+app.use(express.json());
+app.use("/user", UserRouter);
+
+// Test database connection
+pgPool.connect((err, client, release) => {
+    if (err) {
+        console.error('Error acquiring client', err.stack);
+        return;
+    }
+    console.log('Connected to database');
+    release(); // Release the client
+    console.log("Test Connection Closed")
 });
 
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
-})
+// Root route
+app.get('/', (req: Request, res: Response) => {
+    res.send('Hello World!');
+});
+
+// Start server
+const PORT =  3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+export default pgPool;
