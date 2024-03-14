@@ -1,4 +1,11 @@
 import bcrypt from "bcryptjs";
+import { expressjwt } from "express-jwt";
+import { Secret } from "jsonwebtoken";
+import dotenv from 'dotenv';
+dotenv.config();
+
+
+
 // import { expressjwt } from "express-jwt";
 
 /**
@@ -35,3 +42,38 @@ export const comparePassword = (givenPassword: string, hash: string) => {
             console.log(err);
         });
 };
+
+
+/**
+ * Authorization middleware
+ * @param {*} role - Either 'Admin', 'Guardian', or 'Tutor'
+ * @returns {function} - Express middleware functions
+ */
+
+export function authorize(role: string) {
+    return [
+        expressjwt({ secret: process.env.JWT_SECRET as Secret, algorithms: ["HS256"] }),
+        // Role authorization middleware
+        (req: any, res: any, next: any) => {
+            console.log("Role is ", req.auth.role)
+            if (
+                req.auth.role !== "admin" &&
+                req.auth.role !== "user"
+            ) {
+                return res.status(401).json({ message: "Unauthorized user" });
+            }
+            if (role === "admin" && req.auth.role !== "admin") {
+                return res.status(401).json({ message: "Unauthorized Admin" });
+            }
+         
+            next();
+        },
+        // Error middleware -- Called when expressjwt() throws an error
+        (err:any, req:any, res:any, next:any) => {
+            if (err.name === "UnauthorizedError") {
+                return res.status(401).json({ message: "Unauthorized Error" });
+            }
+            next();
+        },
+    ];
+}

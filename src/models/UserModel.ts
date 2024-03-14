@@ -28,8 +28,7 @@ class UserModel {
 
         return pool.query(query, values)
             .then(() => console.log('User created successfully'))
-            .catch(err => console.error('Error creating user:', err));
-    }
+            .catch(err => { throw new Error('Error creating user: ' + err); })    }
 
     get(email: string): Promise<User | null> {
         const query = 'SELECT * FROM public.auth WHERE email = $1';

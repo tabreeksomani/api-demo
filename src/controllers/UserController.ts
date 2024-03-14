@@ -21,8 +21,7 @@ export default class UserController {
         return UserModel.create(args)
             .then(() => 'User created')
             .catch(err => {
-                console.error('Error creating user:', err);
-                return 'Error creating user';
+                throw new Error('Error creating user: ' + err);
             });
     }
     async login(args: LoginArgs): Promise<string> {
